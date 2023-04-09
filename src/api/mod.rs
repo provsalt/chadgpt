@@ -24,7 +24,6 @@ impl API {
             content: message.trim().to_string(),
             name: None,
         });
-        println!("{:#?}", self.messages.clone());
         let chat_completion = match self.model {
             Models::GPT35 => ChatCompletion::builder("gpt-3.5-turbo", self.messages.clone()),
             Models::GPT4 => ChatCompletion::builder("gpt-4", self.messages.clone()),
