@@ -1,4 +1,5 @@
 use std::io;
+use std::io::Write;
 use clap::{Parser, ValueEnum};
 use clap::builder::PossibleValue;
 use colored::*;
@@ -7,7 +8,7 @@ mod utils;
 mod api;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
-enum Models {
+pub enum Models {
     GPT35,
     GPT4
 }
@@ -51,10 +52,14 @@ impl std::str::FromStr for Models {
 #[command(author, version, about, long_about = None)]
 struct Args {
     #[arg(short, long, default_value_t = Models::GPT35)]
-    model: Models
+    model: Models,
+
+    #[arg(long, default_value = "1000")]
+    max_tokens: u32
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
     println!("{} {}.", "Welcome to chadgpt! Running version".bright_green(), env!("CARGO_PKG_VERSION"));
     let secret_opt = utils::get_secret();
@@ -67,5 +72,13 @@ fn main() {
     else {
         key = secret_opt.unwrap()
     }
-
+    let mut api = api::API::new(key, args.model, args.max_tokens);
+    loop {
+        print!("User: ");
+        io::stdout().flush().unwrap();
+        let mut message = String::new();
+        io::stdin().read_line(&mut message).expect("Failed to read line");
+        let response = api.send(&message).await;
+        println!("AI: {}", response);
+    }
 }
